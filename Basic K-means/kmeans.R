@@ -10,6 +10,7 @@ bank_data <- read.csv(file="bankdata.csv",head=TRUE,sep=",")
 #as this data is not ordinal. 
 
 #we subtract 1 from each conversion because as.numeric() starts with 1 instead of 0
+#I probably could have done this in one line.
 #for sex, 0=FEMALE and 1=MALE
 bank_data$sex = as.numeric(bank_data$sex) - 1
 #for region 0=INNER_CITY 1=RURAL 2=SUBURBAN 3=TOWN
@@ -32,7 +33,7 @@ bank_data$region = sapply(bank_data$region, function(x) (x-min(bank_data$region)
 #get two random centroids.
 #Was easy to copy rows to keep the data frame formats matching. There is probably a better way to deal with this.
 #I didn't want a random value that was necessarily in the data set,
-#so after copying a random row I make all attributes (except PEP) random
+#so after copying a random row I make all relevant attributes random
 
 k1 = bank_data[sample(600,1),]
 k2 = bank_data[sample(600,1),]
@@ -52,10 +53,13 @@ k2dist = apply(bank_data[2:11],1, function(x) sqrt(sum((x - k2[2:11])^2)))
 
 #we compare the distances, adding a new column "cluster" to bank_data
 #cluster contains the closer cluster (the lesser distance)
+#note I use a logical evaluation which gives a 0 or 1. If it's true (meaning the point is further from k1)
+#then the statement evaluates to 1, which becomes 2. Likewise, if it's false (meaing k2 is further)
+#the statement evaluates to 0, which becomes 1.
 bank_data$cluster = as.numeric(k1dist > k2dist) + 1
 
 #we want "old" centroids, for comparing in the main kmeans loop. When the new centroids match the old centroids
-#kmeans has done its work.
+#kmeans stops.
 k1old = k1
 k2old = k2
 
@@ -78,16 +82,16 @@ while (!all(k1==k1old) || !all(k2==k2old)) {
   
 }
 
-#Lets make a plots. These plots are not complete or proper, but just give a quick visual peek at the 
-#differences between the two clusters
+#Lets make a plot. These plots are not complete or proper, but just give a quick visual peek at the 
+#differences between the two clusters.
 c1 = subset(bank_data, bank_data$cluster == 1)
 c2 = subset(bank_data, bank_data$cluster == 2)
 plots = bank_data[1:3,] #Copy for chart labels
 plots$id = NULL #get rid of columns we don't want plotted
 plots$cluster = NULL
 
-#yes, I realize the 2nd and 3rd means are already in the centroids. This code is from an aborted attempt
-#to de-transform the code. It works so I didn't change it.
+#yes, I realize the 2nd and 3rd means are already in the centroids. This code is relic from an aborted attempt
+#to de-transform the code. It works for the untransformed data so I didn't change it.
 plots$age = c(mean(bank_data$age),mean(c1$age),mean(c2$age))
 plots$sex = c(mean(bank_data$sex),mean(c1$sex),mean(c2$sex))
 plots$region = c(mean(bank_data$region),mean(c1$region),mean(c2$region))
